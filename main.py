@@ -133,6 +133,17 @@ class Game:
                     healing_label_y + 18 <= my <= healing_label_y + 18 + input_h):
                     self.input_focus = 'healing'
                     continue
+                # Creator Submit button click (below inputs)
+                submit_x = self.card_name_input_x
+                submit_y = self.card_name_input_y + 5 * spacing
+                submit_w = self.card_name_input_width
+                submit_h = 32
+                if (submit_x <= mx <= submit_x + submit_w and
+                    submit_y <= my <= submit_y + submit_h):
+                    # Create card from inputs
+                    self._submit_creator_inputs()
+                    # Do not start dragging on this click
+                    continue
                 # Clicking elsewhere clears focus
                 self.input_focus = None
                 # Draw button click
@@ -379,6 +390,30 @@ class Game:
         
         # Update display
         pygame.display.flip()
+
+    def _submit_creator_inputs(self):
+        """Create a new Card from the upper-right inputs and add to table."""
+        def to_int(s):
+            try:
+                return int(s)
+            except Exception:
+                return 0
+        name = self.card_name_input.strip() or "Card"
+        mana = to_int(self.mana_input)
+        attack = to_int(self.attack_input)
+        defense = to_int(self.defense_input)
+        healing = to_int(self.healing_input)
+        attrs = {}
+        if attack: attrs["attack"] = attack
+        if defense: attrs["defense"] = defense
+        if healing: attrs["healing"] = healing
+        if mana: attrs["mana"] = mana
+        new_card = Card(name, **attrs)
+        # Place to the right of the deck at deck Y
+        place_x = self.deck_x + self.deck_width + 20
+        place_y = self.deck_y
+        new_card.set_position(place_x, place_y)
+        self.cards.append(new_card)
     
     def run(self):
         """Main game loop."""
