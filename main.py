@@ -28,6 +28,9 @@ class Game:
         self.renderer = CardRenderer(self.screen)
         self.deck_manager = DeckManager()
         self.table_deck = Deck("Table Deck")
+        # Persistent deck for cards created via Card Creator
+        loaded_created = self.deck_manager.load_deck("CreatedCards")
+        self.created_cards_deck = loaded_created if loaded_created else Deck("CreatedCards")
         # Static deck placement and size (matches card size)
         self.deck_x = 10
         self.deck_y = 10
@@ -65,6 +68,13 @@ class Game:
         
         # Create some test cards
         self._create_test_cards()
+        
+        # Add previously created cards (persisted) to the table
+        for persisted_card in self.created_cards_deck.cards:
+            # Ensure their rects are set and include in current table
+            if not persisted_card.rect:
+                persisted_card.update_rect()
+            self.cards.append(persisted_card)
     
     def _create_test_cards(self):
         """Create sample cards for testing."""
@@ -414,6 +424,10 @@ class Game:
         place_y = self.deck_y
         new_card.set_position(place_x, place_y)
         self.cards.append(new_card)
+        
+        # Add to persistent created-cards deck and save immediately
+        self.created_cards_deck.add_card(new_card)
+        self.deck_manager.save_deck(self.created_cards_deck)
     
     def run(self):
         """Main game loop."""
@@ -422,6 +436,12 @@ class Game:
             self.update()
             self.render()
             self.clock.tick(60)  # Cap at 60 FPS
+        
+        # Save created cards before exiting
+        try:
+            self.deck_manager.save_deck(self.created_cards_deck)
+        except Exception:
+            pass
         
         pygame.quit()
         sys.exit()

@@ -1,0 +1,15 @@
+{
+  "name": "CreatedCards",
+  "cards": [
+    {
+      "name": "Test",
+      "attributes": {
+        "attack": 1,
+        "mana": 1
+      },
+      "x": 362,
+      "y": 62,
+      "face_up": true
+    }
+  ]
+}
