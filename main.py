@@ -35,6 +35,12 @@ class Game:
         self.deck_height = 140
         # Debug view flag for deck contents
         self.view_deck_debug = False
+        # Player hand area along bottom
+        self.hand_x = 10
+        self.hand_y = self.screen_height - 180
+        self.hand_width = self.screen_width - 20
+        self.hand_height = 170
+        self.hand_cards = []
         
         # Game state
         self.running = True
@@ -74,7 +80,7 @@ class Game:
             # Handle mouse clicks on cards
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 # Check which card was clicked
-                for card in reversed(self.cards):  # Check from top to bottom
+                for card in reversed(self.cards + self.hand_cards):  # Check from top to bottom
                     if card.is_point_inside(*event.pos):
                         self.input_handler.start_drag(card)
                         break
@@ -99,10 +105,21 @@ class Game:
                         # Remove from table if present
                         if released in self.cards:
                             self.cards.remove(released)
+                        if released in self.hand_cards:
+                            self.hand_cards.remove(released)
                         # Snap to deck position
                         released.set_position(self.deck_x, self.deck_y)
                         # Place on top of deck
                         self.table_deck.add_to_top(released)
+                    elif (self.hand_x <= mx <= self.hand_x + self.hand_width and
+                          self.hand_y <= my <= self.hand_y + self.hand_height):
+                        # Drop into player hand
+                        if released in self.cards:
+                            self.cards.remove(released)
+                        if released in self.hand_cards:
+                            self.hand_cards.remove(released)
+                        self.hand_cards.append(released)
+                        # Positioning handled by layout in update()
                     # Clear the released reference
                     self.input_handler.released_card = None
 
@@ -126,16 +143,48 @@ class Game:
         
         # Update card hover states
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        for card in self.cards:
+        for card in self.cards + self.hand_cards:
             card.hovered = card.is_point_inside(mouse_x, mouse_y)
+        
+        # Layout hand cards
+        self._layout_hand()
+
+    def _layout_hand(self):
+        """Arrange cards in the player's hand neatly centered along the hand area."""
+        if not self.hand_cards:
+            return
+        card_width = self.hand_cards[0].width
+        card_height = self.hand_cards[0].height
+        available_width = self.hand_width - 20
+        count = len(self.hand_cards)
+        if count == 1:
+            gap = 0
+        else:
+            gap = (available_width - count * card_width) / (count - 1)
+            gap = max(10, min(30, gap))
+        total_width = count * card_width + (count - 1) * gap
+        start_x = self.hand_x + (self.hand_width - total_width) / 2
+        y = self.hand_y + (self.hand_height - card_height) / 2
+        for idx, card in enumerate(self.hand_cards):
+            if card.dragging:
+                # Skip positioning dragged cards
+                continue
+            x = start_x + idx * (card_width + gap)
+            card.set_position(int(x), int(y))
     
     def render(self):
         """Render the game."""
         # Clear screen
         self.screen.fill((40, 40, 40))
         
+        # Render the hand area first (background)
+        self.renderer.render_hand_area(self.hand_x, self.hand_y, self.hand_width, self.hand_height)
+
         # Render all cards
         for card in self.cards:
+            self.renderer.render_card(card)
+        # Render hand cards on top of hand area
+        for card in self.hand_cards:
             self.renderer.render_card(card)
         
         # Render the deck pile
