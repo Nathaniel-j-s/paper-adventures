@@ -13,6 +13,7 @@ class InputHandler:
         self.mouse_clicked = False
         self.mouse_down = False
         self.dragged_card = None
+        self.released_card = None
         self.drag_offset_x = 0
         self.drag_offset_y = 0
     
@@ -59,6 +60,8 @@ class InputHandler:
         if self.dragged_card:
             self.dragged_card.dragging = False
             self.dragged_card.selected = False
+            # Expose the released card for drop handling
+            self.released_card = self.dragged_card
             self.dragged_card = None
     
     def reset_click(self):

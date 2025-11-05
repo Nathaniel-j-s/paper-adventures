@@ -27,6 +27,16 @@ class Deck:
         """
         self.cards.append(card)
     
+    def add_to_top(self, card):
+        """
+        Place a card on the top of the deck.
+        The deck treats index 0 as the top for draws.
+        
+        Args:
+            card: Card object to place on top
+        """
+        self.cards.insert(0, card)
+    
     def remove_card(self, card):
         """
         Remove a card from the deck.

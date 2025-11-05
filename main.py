@@ -27,6 +27,14 @@ class Game:
         self.input_handler = InputHandler()
         self.renderer = CardRenderer(self.screen)
         self.deck_manager = DeckManager()
+        self.table_deck = Deck("Table Deck")
+        # Static deck placement and size (matches card size)
+        self.deck_x = 10
+        self.deck_y = 10
+        self.deck_width = 100
+        self.deck_height = 140
+        # Debug view flag for deck contents
+        self.view_deck_debug = False
         
         # Game state
         self.running = True
@@ -80,6 +88,33 @@ class Game:
                         if card.is_point_inside(*mouse_pos):
                             card.flip()
                             break
+
+            # Handle dropping onto the deck area
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                released = self.input_handler.released_card
+                if released is not None:
+                    mx, my = pygame.mouse.get_pos()
+                    if (self.deck_x <= mx <= self.deck_x + self.deck_width and
+                        self.deck_y <= my <= self.deck_y + self.deck_height):
+                        # Remove from table if present
+                        if released in self.cards:
+                            self.cards.remove(released)
+                        # Snap to deck position
+                        released.set_position(self.deck_x, self.deck_y)
+                        # Place on top of deck
+                        self.table_deck.add_to_top(released)
+                    # Clear the released reference
+                    self.input_handler.released_card = None
+
+            # Debug: show deck contents while holding V over deck
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_v:
+                mx, my = pygame.mouse.get_pos()
+                self.view_deck_debug = (
+                    self.deck_x <= mx <= self.deck_x + self.deck_width and
+                    self.deck_y <= my <= self.deck_y + self.deck_height
+                )
+            if event.type == pygame.KEYUP and event.key == pygame.K_v:
+                self.view_deck_debug = False
     
     def update(self):
         """Update game state."""
@@ -102,6 +137,21 @@ class Game:
         # Render all cards
         for card in self.cards:
             self.renderer.render_card(card)
+        
+        # Render the deck pile
+        self.renderer.render_deck_pile(self.table_deck, self.deck_x, self.deck_y,
+                                       self.deck_width, self.deck_height)
+        
+        # Render debug list if hovering deck and V is held
+        if self.view_deck_debug:
+            mx, my = pygame.mouse.get_pos()
+            if (self.deck_x <= mx <= self.deck_x + self.deck_width and
+                self.deck_y <= my <= self.deck_y + self.deck_height):
+                self.renderer.render_deck_debug_list(
+                    self.table_deck,
+                    self.deck_x + self.deck_width + 12,
+                    self.deck_y
+                )
         
         # Update display
         pygame.display.flip()

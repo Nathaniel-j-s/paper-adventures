@@ -82,3 +82,41 @@ class CardRenderer:
                 self.screen.blit(text, text_rect)
                 y_offset += 25
 
+    def render_deck_pile(self, deck, x, y, width=100, height=140):
+        """Render a deck pile at a fixed position with count label."""
+        # Background for pile (use a darker back if there are cards)
+        has_cards = deck.size() > 0
+        pile_color = (60, 60, 100) if has_cards else (35, 35, 35)
+        pygame.draw.rect(self.screen, pile_color, (x, y, width, height))
+        # Border
+        border_color = (200, 200, 200) if has_cards else (90, 90, 90)
+        pygame.draw.rect(self.screen, border_color, (x, y, width, height), 2)
+        # Count label
+        count_text = self.title_font.render(f"Deck: {deck.size()}", True, (230, 230, 230))
+        count_rect = count_text.get_rect(center=(x + width // 2, y + height + 14))
+        self.screen.blit(count_text, count_rect)
+
+    def render_deck_debug_list(self, deck, x, y):
+        """Render a simple list of card names from top to bottom for debugging."""
+        # Panel metrics
+        panel_width = 220
+        line_height = 22
+        padding = 8
+        items = [card.name for card in deck.cards]  # index 0 is top
+        panel_height = padding * 2 + max(1, len(items)) * line_height
+        # Background panel
+        pygame.draw.rect(self.screen, (25, 25, 25), (x, y, panel_width, panel_height))
+        pygame.draw.rect(self.screen, (180, 180, 180), (x, y, panel_width, panel_height), 1)
+        # Title
+        title_text = self.title_font.render("Deck (top -> bottom)", True, (230, 230, 230))
+        self.screen.blit(title_text, (x + padding, y + padding - 2))
+        # Items
+        list_y = y + padding + 20
+        if not items:
+            empty_text = self.font.render("<empty>", True, (200, 200, 200))
+            self.screen.blit(empty_text, (x + padding, list_y))
+            return
+        for idx, name in enumerate(items):
+            item_text = self.font.render(f"{idx+1}. {name}", True, (200, 200, 200))
+            self.screen.blit(item_text, (x + padding, list_y + idx * line_height))
+
