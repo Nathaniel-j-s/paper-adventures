@@ -114,6 +114,27 @@ class CardRenderer:
         label_rect = label.get_rect(center=(x + width // 2, y + height // 2))
         self.screen.blit(label, label_rect)
 
+    def render_text_input(self, x, y, width, height, label_text, value_text, focused=False):
+        """Render a labeled text input box."""
+        # Label
+        label_surface = self.font.render(label_text, True, (220, 220, 220))
+        self.screen.blit(label_surface, (x, y))
+        # Input box
+        box_y = y + 18
+        border_color = (255, 200, 0) if focused else (150, 150, 150)
+        pygame.draw.rect(self.screen, (35, 35, 35), (x, box_y, width, height))
+        pygame.draw.rect(self.screen, border_color, (x, box_y, width, height), 2)
+        # Text
+        text_surface = self.font.render(value_text, True, (230, 230, 230))
+        self.screen.blit(text_surface, (x + 8, box_y + (height - text_surface.get_height()) // 2))
+
+    def render_panel_with_title(self, x, y, width, height, title):
+        """Render a simple panel with a border and title text."""
+        pygame.draw.rect(self.screen, (25, 25, 25), (x, y, width, height))
+        pygame.draw.rect(self.screen, (120, 120, 120), (x, y, width, height), 2)
+        title_surface = self.title_font.render(title, True, (230, 230, 230))
+        self.screen.blit(title_surface, (x + 8, y + 8))
+
     def render_deck_debug_list(self, deck, x, y):
         """Render a simple list of card names from top to bottom for debugging."""
         # Panel metrics

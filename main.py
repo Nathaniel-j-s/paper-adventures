@@ -40,6 +40,18 @@ class Game:
         self.draw_btn_height = 36
         self.draw_btn_x = self.deck_x
         self.draw_btn_y = self.deck_y + self.deck_height + 20
+        
+        # Upper-right inputs: Card Name + numeric stats
+        self.card_name_input = ""
+        self.mana_input = ""
+        self.attack_input = ""
+        self.defense_input = ""
+        self.healing_input = ""
+        self.input_focus = None  # one of: 'name','mana','attack','defense','healing'
+        self.card_name_input_width = 260
+        self.card_name_input_height = 28
+        self.card_name_input_x = self.screen_width - self.card_name_input_width - 10
+        self.card_name_input_y = 10
         # Player hand area along bottom
         self.hand_x = 10
         self.hand_y = self.screen_height - 180
@@ -84,6 +96,45 @@ class Game:
             
             # Handle mouse clicks on cards
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                # Hit test for upper-right inputs (Name + Mana/Attack/Defense/Healing)
+                mx, my = event.pos
+                input_w = self.card_name_input_width
+                input_h = self.card_name_input_height
+                # Name
+                if (self.card_name_input_x <= mx <= self.card_name_input_x + input_w and
+                    self.card_name_input_y + 18 <= my <= self.card_name_input_y + 18 + input_h):
+                    self.input_focus = 'name'
+                    continue
+                # Subsequent numeric fields with spacing 40 between labels
+                spacing = 40
+                base_x = self.card_name_input_x
+                base_y = self.card_name_input_y
+                # Mana
+                mana_label_y = base_y + spacing
+                if (base_x <= mx <= base_x + input_w and
+                    mana_label_y + 18 <= my <= mana_label_y + 18 + input_h):
+                    self.input_focus = 'mana'
+                    continue
+                # Attack
+                attack_label_y = base_y + 2 * spacing
+                if (base_x <= mx <= base_x + input_w and
+                    attack_label_y + 18 <= my <= attack_label_y + 18 + input_h):
+                    self.input_focus = 'attack'
+                    continue
+                # Defense
+                defense_label_y = base_y + 3 * spacing
+                if (base_x <= mx <= base_x + input_w and
+                    defense_label_y + 18 <= my <= defense_label_y + 18 + input_h):
+                    self.input_focus = 'defense'
+                    continue
+                # Healing
+                healing_label_y = base_y + 4 * spacing
+                if (base_x <= mx <= base_x + input_w and
+                    healing_label_y + 18 <= my <= healing_label_y + 18 + input_h):
+                    self.input_focus = 'healing'
+                    continue
+                # Clicking elsewhere clears focus
+                self.input_focus = None
                 # Draw button click
                 if (self.draw_btn_x <= event.pos[0] <= self.draw_btn_x + self.draw_btn_width and
                     self.draw_btn_y <= event.pos[1] <= self.draw_btn_y + self.draw_btn_height):
@@ -150,6 +201,37 @@ class Game:
                 )
             if event.type == pygame.KEYUP and event.key == pygame.K_v:
                 self.view_deck_debug = False
+            
+            # Typing into upper-right inputs when focused
+            if event.type == pygame.KEYDOWN and self.input_focus is not None:
+                # Helper to set/get value by focus key
+                def get_val():
+                    if self.input_focus == 'name': return self.card_name_input
+                    if self.input_focus == 'mana': return self.mana_input
+                    if self.input_focus == 'attack': return self.attack_input
+                    if self.input_focus == 'defense': return self.defense_input
+                    if self.input_focus == 'healing': return self.healing_input
+                    return ""
+                def set_val(v):
+                    if self.input_focus == 'name': self.card_name_input = v
+                    elif self.input_focus == 'mana': self.mana_input = v
+                    elif self.input_focus == 'attack': self.attack_input = v
+                    elif self.input_focus == 'defense': self.defense_input = v
+                    elif self.input_focus == 'healing': self.healing_input = v
+                current = get_val()
+                if event.key == pygame.K_BACKSPACE:
+                    set_val(current[:-1])
+                elif event.key == pygame.K_RETURN:
+                    # Ignore submit behavior for now
+                    pass
+                else:
+                    if event.unicode:
+                        if self.input_focus == 'name':
+                            if len(current) < 30:
+                                set_val(current + event.unicode)
+                        else:
+                            if event.unicode.isdigit() and len(current) < 3:
+                                set_val(current + event.unicode)
     
     def update(self):
         """Update game state."""
@@ -212,6 +294,76 @@ class Game:
         self.renderer.render_button(
             self.draw_btn_x, self.draw_btn_y, self.draw_btn_width, self.draw_btn_height,
             "Draw", enabled=not self.table_deck.is_empty()
+        )
+        
+        # Render Card Creator panel box around the upper-right inputs
+        spacing = 40
+        panel_x = self.card_name_input_x - 8
+        panel_y = self.card_name_input_y - 8
+        panel_w = self.card_name_input_width + 16
+        # Bottom = button top (y + 5*spacing) + button height (32) + bottom padding (12)
+        panel_h = (self.card_name_input_y + 5 * spacing + 32 + 12) - panel_y
+        self.renderer.render_panel_with_title(panel_x, panel_y, panel_w, panel_h, "Card Creator")
+
+        # Render the upper-right inputs (Card Name + Mana/Attack/Defense/Healing)
+        # Name
+        self.renderer.render_text_input(
+            self.card_name_input_x,
+            self.card_name_input_y,
+            self.card_name_input_width,
+            self.card_name_input_height,
+            "Card Name",
+            self.card_name_input,
+            self.input_focus == 'name'
+        )
+        # Mana
+        self.renderer.render_text_input(
+            self.card_name_input_x,
+            self.card_name_input_y + spacing,
+            self.card_name_input_width,
+            self.card_name_input_height,
+            "Mana",
+            self.mana_input,
+            self.input_focus == 'mana'
+        )
+        # Attack
+        self.renderer.render_text_input(
+            self.card_name_input_x,
+            self.card_name_input_y + 2 * spacing,
+            self.card_name_input_width,
+            self.card_name_input_height,
+            "Attack",
+            self.attack_input,
+            self.input_focus == 'attack'
+        )
+        # Defense
+        self.renderer.render_text_input(
+            self.card_name_input_x,
+            self.card_name_input_y + 3 * spacing,
+            self.card_name_input_width,
+            self.card_name_input_height,
+            "Defense",
+            self.defense_input,
+            self.input_focus == 'defense'
+        )
+        # Healing
+        self.renderer.render_text_input(
+            self.card_name_input_x,
+            self.card_name_input_y + 4 * spacing,
+            self.card_name_input_width,
+            self.card_name_input_height,
+            "Healing",
+            self.healing_input,
+            self.input_focus == 'healing'
+        )
+        # Submit button (no functionality yet)
+        self.renderer.render_button(
+            self.card_name_input_x,
+            self.card_name_input_y + 5 * spacing,
+            self.card_name_input_width,
+            32,
+            "Submit",
+            enabled=True
         )
         
         # Render debug list if hovering deck and V is held
