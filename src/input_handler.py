@@ -32,7 +32,7 @@ class InputHandler:
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # Left mouse button
                 self.mouse_down = False
-                self.dragged_card = None
+                self.end_drag()
     
     def start_drag(self, card):
         """
