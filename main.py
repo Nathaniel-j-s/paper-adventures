@@ -35,6 +35,11 @@ class Game:
         self.deck_height = 140
         # Debug view flag for deck contents
         self.view_deck_debug = False
+        # Draw button under deck
+        self.draw_btn_width = self.deck_width
+        self.draw_btn_height = 36
+        self.draw_btn_x = self.deck_x
+        self.draw_btn_y = self.deck_y + self.deck_height + 20
         # Player hand area along bottom
         self.hand_x = 10
         self.hand_y = self.screen_height - 180
@@ -79,6 +84,19 @@ class Game:
             
             # Handle mouse clicks on cards
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                # Draw button click
+                if (self.draw_btn_x <= event.pos[0] <= self.draw_btn_x + self.draw_btn_width and
+                    self.draw_btn_y <= event.pos[1] <= self.draw_btn_y + self.draw_btn_height):
+                    # Draw top card into hand if available
+                    drawn = self.table_deck.draw_card()
+                    if drawn is not None:
+                        if drawn in self.cards:
+                            self.cards.remove(drawn)
+                        if drawn in self.hand_cards:
+                            self.hand_cards.remove(drawn)
+                        self.hand_cards.append(drawn)
+                    # Do not start dragging when clicking button
+                    continue
                 # Check which card was clicked
                 for card in reversed(self.cards + self.hand_cards):  # Check from top to bottom
                     if card.is_point_inside(*event.pos):
@@ -190,6 +208,11 @@ class Game:
         # Render the deck pile
         self.renderer.render_deck_pile(self.table_deck, self.deck_x, self.deck_y,
                                        self.deck_width, self.deck_height)
+        # Render draw button under deck
+        self.renderer.render_button(
+            self.draw_btn_x, self.draw_btn_y, self.draw_btn_width, self.draw_btn_height,
+            "Draw", enabled=not self.table_deck.is_empty()
+        )
         
         # Render debug list if hovering deck and V is held
         if self.view_deck_debug:

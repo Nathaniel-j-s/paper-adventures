@@ -103,6 +103,17 @@ class CardRenderer:
         label = self.title_font.render("Hand", True, (220, 220, 220))
         self.screen.blit(label, (x + 8, y + 6))
 
+    def render_button(self, x, y, width, height, text, enabled=True):
+        """Render a simple button."""
+        bg = (70, 70, 70) if enabled else (45, 45, 45)
+        border = (180, 180, 180) if enabled else (90, 90, 90)
+        fg = (240, 240, 240) if enabled else (160, 160, 160)
+        pygame.draw.rect(self.screen, bg, (x, y, width, height), border_radius=4)
+        pygame.draw.rect(self.screen, border, (x, y, width, height), 2, border_radius=4)
+        label = self.title_font.render(text, True, fg)
+        label_rect = label.get_rect(center=(x + width // 2, y + height // 2))
+        self.screen.blit(label, label_rect)
+
     def render_deck_debug_list(self, deck, x, y):
         """Render a simple list of card names from top to bottom for debugging."""
         # Panel metrics
