@@ -70,6 +70,16 @@ class Game:
                     if card.is_point_inside(*event.pos):
                         self.input_handler.start_drag(card)
                         break
+            
+            # Handle flip on 'F' key while hovering a card
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_f:
+                # Avoid flipping while dragging a card
+                if not self.input_handler.dragged_card:
+                    mouse_pos = pygame.mouse.get_pos()
+                    for card in reversed(self.cards):  # Top-most first
+                        if card.is_point_inside(*mouse_pos):
+                            card.flip()
+                            break
     
     def update(self):
         """Update game state."""
