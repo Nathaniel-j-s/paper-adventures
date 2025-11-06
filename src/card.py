@@ -1,22 +1,29 @@
 """
 Card class representing individual playing cards.
-Supports custom attributes for game-specific mechanics.
+Supports different card types with type-specific attributes.
 """
+
+CARD_TYPES = ["Character", "Upgrade", "Plan", "Skill", "Location", "Encounter"]
 
 
 class Card:
     """Represents a single card with customizable attributes."""
     
-    def __init__(self, name, **attributes):
+    def __init__(self, name, card_type="Character", **attributes):
         """
         Initialize a card.
         
         Args:
             name: The card's identifier/name
-            **attributes: Custom attributes for the card (e.g., attack=5, defense=3)
+            card_type: Type of card (Character, Upgrade, Plan, Skill, Location, Encounter)
+            **attributes: Custom attributes for the card
         """
         self.name = name
+        self.card_type = card_type
         self.attributes = attributes
+        
+        # Initialize type-specific attributes with defaults
+        self._initialize_type_attributes()
         
         # Visual properties
         self.x = 0
@@ -36,7 +43,52 @@ class Card:
         self.back_color = (50, 50, 150)
         self.border_color = (50, 50, 50)
         self.text_color = (0, 0, 0)
-        
+    
+    def _initialize_type_attributes(self):
+        """Initialize type-specific attributes based on card type."""
+        if self.card_type == "Character":
+            self.attributes.setdefault("level", 0)
+            self.attributes.setdefault("class", "")
+            self.attributes.setdefault("strength", 0)
+            self.attributes.setdefault("agility", 0)
+            self.attributes.setdefault("intelligence", 0)
+            self.attributes.setdefault("wisdom", 0)
+            self.attributes.setdefault("special_rules", "")
+        elif self.card_type == "Upgrade":
+            self.attributes.setdefault("level", 0)
+            self.attributes.setdefault("strength_mod", 0)
+            self.attributes.setdefault("agility_mod", 0)
+            self.attributes.setdefault("intelligence_mod", 0)
+            self.attributes.setdefault("wisdom_mod", 0)
+            self.attributes.setdefault("special_rules", "")
+        elif self.card_type == "Plan":
+            self.attributes.setdefault("strength_req", 0)
+            self.attributes.setdefault("agility_req", 0)
+            self.attributes.setdefault("intelligence_req", 0)
+            self.attributes.setdefault("wisdom_req", 0)
+            self.attributes.setdefault("special_rules", "")
+        elif self.card_type == "Skill":
+            self.attributes.setdefault("strength_req", 0)
+            self.attributes.setdefault("agility_req", 0)
+            self.attributes.setdefault("intelligence_req", 0)
+            self.attributes.setdefault("wisdom_req", 0)
+            self.attributes.setdefault("special_rules", "")
+        elif self.card_type == "Location":
+            self.attributes.setdefault("level", 0)
+            self.attributes.setdefault("strength_def", 0)
+            self.attributes.setdefault("agility_def", 0)
+            self.attributes.setdefault("intelligence_def", 0)
+            self.attributes.setdefault("wisdom_def", 0)
+            self.attributes.setdefault("hit_points", 0)
+            self.attributes.setdefault("special_rules", "")
+        elif self.card_type == "Encounter":
+            self.attributes.setdefault("strength_def", 0)
+            self.attributes.setdefault("agility_def", 0)
+            self.attributes.setdefault("intelligence_def", 0)
+            self.attributes.setdefault("wisdom_def", 0)
+            self.attributes.setdefault("hit_points", 0)
+            self.attributes.setdefault("special_rules", "")
+    
     def update_rect(self):
         """Update the card's rectangle for collision detection."""
         self.rect = (self.x, self.y, self.width, self.height)
@@ -68,5 +120,5 @@ class Card:
     
     def __str__(self):
         attrs_str = ", ".join(f"{k}={v}" for k, v in self.attributes.items())
-        return f"Card({self.name}" + (f", {attrs_str})" if attrs_str else ")")
+        return f"Card({self.name}, type={self.card_type}" + (f", {attrs_str})" if attrs_str else ")")
 

@@ -4,7 +4,7 @@ Main entry point for the PyGame card game.
 
 import pygame
 import sys
-from src.card import Card
+from src.card import Card, CARD_TYPES
 from src.deck import Deck
 from src.renderer import CardRenderer
 from src.input_handler import InputHandler
@@ -44,17 +44,36 @@ class Game:
         self.draw_btn_x = self.deck_x
         self.draw_btn_y = self.deck_y + self.deck_height + 20
         
-        # Upper-right inputs: Card Name + numeric stats
+        # Upper-right Card Creator inputs
+        self.card_type_index = 0  # Index into CARD_TYPES
         self.card_name_input = ""
-        self.mana_input = ""
-        self.attack_input = ""
-        self.defense_input = ""
-        self.healing_input = ""
-        self.input_focus = None  # one of: 'name','mana','attack','defense','healing'
+        # Fields for all card types
+        self.level_input = ""
+        self.class_input = ""
+        self.strength_input = ""
+        self.agility_input = ""
+        self.intelligence_input = ""
+        self.wisdom_input = ""
+        self.strength_mod_input = ""
+        self.agility_mod_input = ""
+        self.intelligence_mod_input = ""
+        self.wisdom_mod_input = ""
+        self.strength_req_input = ""
+        self.agility_req_input = ""
+        self.intelligence_req_input = ""
+        self.wisdom_req_input = ""
+        self.strength_def_input = ""
+        self.agility_def_input = ""
+        self.intelligence_def_input = ""
+        self.wisdom_def_input = ""
+        self.hit_points_input = ""
+        self.special_rules_input = ""
+        self.input_focus = None  # Current focused input field
         self.card_name_input_width = 260
         self.card_name_input_height = 28
         self.card_name_input_x = self.screen_width - self.card_name_input_width - 10
         self.card_name_input_y = 10
+        self.spacing = 40  # Spacing between input fields
         # Player hand area along bottom
         self.hand_x = 10
         self.hand_y = self.screen_height - 180
@@ -79,6 +98,60 @@ class Game:
                 persisted_card.update_rect()
             self.cards.append(persisted_card)
 
+    def _get_visible_fields(self):
+        """Get list of visible field names for current card type."""
+        card_type = CARD_TYPES[self.card_type_index]
+        fields = ['name']
+        if card_type == "Character":
+            fields.extend(['type_selector', 'level', 'class', 'strength', 'agility', 
+                          'intelligence', 'wisdom', 'special_rules'])
+        elif card_type == "Upgrade":
+            fields.extend(['type_selector', 'level', 'strength_mod', 'agility_mod', 
+                          'intelligence_mod', 'wisdom_mod', 'special_rules'])
+        elif card_type == "Plan":
+            fields.extend(['type_selector', 'strength_req', 'agility_req', 
+                          'intelligence_req', 'wisdom_req', 'special_rules'])
+        elif card_type == "Skill":
+            fields.extend(['type_selector', 'strength_req', 'agility_req', 
+                          'intelligence_req', 'wisdom_req', 'special_rules'])
+        elif card_type == "Location":
+            fields.extend(['type_selector', 'level', 'strength_def', 'agility_def', 
+                          'intelligence_def', 'wisdom_def', 'hit_points', 'special_rules'])
+        elif card_type == "Encounter":
+            fields.extend(['type_selector', 'strength_def', 'agility_def', 
+                          'intelligence_def', 'wisdom_def', 'hit_points', 'special_rules'])
+        return fields
+    
+    def _get_field_y_position(self, field_name):
+        """Get Y position for a field in the card creator."""
+        card_type = CARD_TYPES[self.card_type_index]
+        field_order = ['name']
+        
+        if card_type == "Character":
+            field_order.extend(['type_selector', 'level', 'class', 'strength', 'agility', 
+                               'intelligence', 'wisdom', 'special_rules'])
+        elif card_type == "Upgrade":
+            field_order.extend(['type_selector', 'level', 'strength_mod', 'agility_mod', 
+                               'intelligence_mod', 'wisdom_mod', 'special_rules'])
+        elif card_type == "Plan":
+            field_order.extend(['type_selector', 'strength_req', 'agility_req', 
+                               'intelligence_req', 'wisdom_req', 'special_rules'])
+        elif card_type == "Skill":
+            field_order.extend(['type_selector', 'strength_req', 'agility_req', 
+                               'intelligence_req', 'wisdom_req', 'special_rules'])
+        elif card_type == "Location":
+            field_order.extend(['type_selector', 'level', 'strength_def', 'agility_def', 
+                               'intelligence_def', 'wisdom_def', 'hit_points', 'special_rules'])
+        elif card_type == "Encounter":
+            field_order.extend(['type_selector', 'strength_def', 'agility_def', 
+                               'intelligence_def', 'wisdom_def', 'hit_points', 'special_rules'])
+        
+        try:
+            index = field_order.index(field_name)
+            return self.card_name_input_y + index * self.spacing
+        except ValueError:
+            return None
+
     def handle_events(self):
         """Process all input events."""
         for event in pygame.event.get():
@@ -90,74 +163,75 @@ class Game:
             
             # Handle mouse clicks on cards
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                # Hit test for upper-right inputs (Name + Mana/Attack/Defense/Healing)
                 mx, my = event.pos
                 input_w = self.card_name_input_width
                 input_h = self.card_name_input_height
-                # Name
-                if (self.card_name_input_x <= mx <= self.card_name_input_x + input_w and
-                    self.card_name_input_y + 18 <= my <= self.card_name_input_y + 18 + input_h):
-                    self.input_focus = 'name'
-                    continue
-                # Subsequent numeric fields with spacing 40 between labels
-                spacing = 40
                 base_x = self.card_name_input_x
-                base_y = self.card_name_input_y
-                # Mana
-                mana_label_y = base_y + spacing
-                if (base_x <= mx <= base_x + input_w and
-                    mana_label_y + 18 <= my <= mana_label_y + 18 + input_h):
-                    self.input_focus = 'mana'
-                    continue
-                # Attack
-                attack_label_y = base_y + 2 * spacing
-                if (base_x <= mx <= base_x + input_w and
-                    attack_label_y + 18 <= my <= attack_label_y + 18 + input_h):
-                    self.input_focus = 'attack'
-                    continue
-                # Defense
-                defense_label_y = base_y + 3 * spacing
-                if (base_x <= mx <= base_x + input_w and
-                    defense_label_y + 18 <= my <= defense_label_y + 18 + input_h):
-                    self.input_focus = 'defense'
-                    continue
-                # Healing
-                healing_label_y = base_y + 4 * spacing
-                if (base_x <= mx <= base_x + input_w and
-                    healing_label_y + 18 <= my <= healing_label_y + 18 + input_h):
-                    self.input_focus = 'healing'
-                    continue
-                # Creator Submit button click (below inputs)
-                submit_x = self.card_name_input_x
-                submit_y = self.card_name_input_y + 5 * spacing
-                submit_w = self.card_name_input_width
-                submit_h = 32
-                if (submit_x <= mx <= submit_x + submit_w and
-                    submit_y <= my <= submit_y + submit_h):
-                    # Create card from inputs
-                    self._submit_creator_inputs()
-                    # Do not start dragging on this click
-                    continue
-                # Clicking elsewhere clears focus
-                self.input_focus = None
-                # Draw button click
-                if (self.draw_btn_x <= event.pos[0] <= self.draw_btn_x + self.draw_btn_width and
-                    self.draw_btn_y <= event.pos[1] <= self.draw_btn_y + self.draw_btn_height):
-                    # Draw top card into hand if available
-                    drawn = self.table_deck.draw_card()
-                    if drawn is not None:
-                        if drawn in self.cards:
-                            self.cards.remove(drawn)
-                        if drawn in self.hand_cards:
-                            self.hand_cards.remove(drawn)
-                        self.hand_cards.append(drawn)
-                    # Do not start dragging when clicking button
-                    continue
-                # Check which card was clicked
-                for card in reversed(self.cards + self.hand_cards):  # Check from top to bottom
-                    if card.is_point_inside(*event.pos):
-                        self.input_handler.start_drag(card)
-                        break
+                handled = False
+                
+                # Check card type selector (dropdown)
+                type_selector_y = self._get_field_y_position('type_selector')
+                if type_selector_y is not None:
+                    if (base_x <= mx <= base_x + input_w and
+                        type_selector_y <= my <= type_selector_y + 32):
+                        # Cycle through card types
+                        self.card_type_index = (self.card_type_index + 1) % len(CARD_TYPES)
+                        self.input_focus = None
+                        handled = True
+                
+                if not handled:
+                    # Check all visible fields
+                    visible_fields = self._get_visible_fields()
+                    for field_name in visible_fields:
+                        if field_name == 'type_selector':
+                            continue
+                        field_y = self._get_field_y_position(field_name)
+                        if field_y is not None:
+                            if (base_x <= mx <= base_x + input_w and
+                                field_y + 18 <= my <= field_y + 18 + input_h):
+                                self.input_focus = field_name
+                                handled = True
+                                break
+                
+                if not handled:
+                    # Check Submit button
+                    visible_fields = self._get_visible_fields()
+                    submit_y = self.card_name_input_y + len(visible_fields) * self.spacing
+                    submit_w = self.card_name_input_width
+                    submit_h = 32
+                    if (base_x <= mx <= base_x + submit_w and
+                        submit_y <= my <= submit_y + submit_h):
+                        self._submit_creator_inputs()
+                        handled = True
+                
+                if not handled:
+                    # Draw button click
+                    if (self.draw_btn_x <= mx <= self.draw_btn_x + self.draw_btn_width and
+                        self.draw_btn_y <= my <= self.draw_btn_y + self.draw_btn_height):
+                        # Draw top card into hand if available
+                        drawn = self.table_deck.draw_card()
+                        if drawn is not None:
+                            if drawn in self.cards:
+                                self.cards.remove(drawn)
+                            if drawn in self.hand_cards:
+                                self.hand_cards.remove(drawn)
+                            self.hand_cards.append(drawn)
+                        # Do not start dragging when clicking button
+                        handled = True
+                
+                if not handled:
+                    # Check which card was clicked
+                    for card in reversed(self.cards + self.hand_cards):  # Check from top to bottom
+                        if card.is_point_inside(*event.pos):
+                            self.input_handler.start_drag(card)
+                            # Clear input focus when clicking on cards
+                            self.input_focus = None
+                            handled = True
+                            break
+                
+                if not handled:
+                    # Clicking elsewhere clears focus
+                    self.input_focus = None
             
             # Handle right-click on cards in hand to move to in-play area
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:  # Right mouse button
@@ -224,20 +298,56 @@ class Game:
             
             # Typing into upper-right inputs when focused
             if event.type == pygame.KEYDOWN and self.input_focus is not None:
-                # Helper to set/get value by focus key
+                # Helper to get/set value by focus key
                 def get_val():
-                    if self.input_focus == 'name': return self.card_name_input
-                    if self.input_focus == 'mana': return self.mana_input
-                    if self.input_focus == 'attack': return self.attack_input
-                    if self.input_focus == 'defense': return self.defense_input
-                    if self.input_focus == 'healing': return self.healing_input
-                    return ""
+                    field_map = {
+                        'name': self.card_name_input,
+                        'level': self.level_input,
+                        'class': self.class_input,
+                        'strength': self.strength_input,
+                        'agility': self.agility_input,
+                        'intelligence': self.intelligence_input,
+                        'wisdom': self.wisdom_input,
+                        'strength_mod': self.strength_mod_input,
+                        'agility_mod': self.agility_mod_input,
+                        'intelligence_mod': self.intelligence_mod_input,
+                        'wisdom_mod': self.wisdom_mod_input,
+                        'strength_req': self.strength_req_input,
+                        'agility_req': self.agility_req_input,
+                        'intelligence_req': self.intelligence_req_input,
+                        'wisdom_req': self.wisdom_req_input,
+                        'strength_def': self.strength_def_input,
+                        'agility_def': self.agility_def_input,
+                        'intelligence_def': self.intelligence_def_input,
+                        'wisdom_def': self.wisdom_def_input,
+                        'hit_points': self.hit_points_input,
+                        'special_rules': self.special_rules_input,
+                    }
+                    return field_map.get(self.input_focus, "")
+                
                 def set_val(v):
                     if self.input_focus == 'name': self.card_name_input = v
-                    elif self.input_focus == 'mana': self.mana_input = v
-                    elif self.input_focus == 'attack': self.attack_input = v
-                    elif self.input_focus == 'defense': self.defense_input = v
-                    elif self.input_focus == 'healing': self.healing_input = v
+                    elif self.input_focus == 'level': self.level_input = v
+                    elif self.input_focus == 'class': self.class_input = v
+                    elif self.input_focus == 'strength': self.strength_input = v
+                    elif self.input_focus == 'agility': self.agility_input = v
+                    elif self.input_focus == 'intelligence': self.intelligence_input = v
+                    elif self.input_focus == 'wisdom': self.wisdom_input = v
+                    elif self.input_focus == 'strength_mod': self.strength_mod_input = v
+                    elif self.input_focus == 'agility_mod': self.agility_mod_input = v
+                    elif self.input_focus == 'intelligence_mod': self.intelligence_mod_input = v
+                    elif self.input_focus == 'wisdom_mod': self.wisdom_mod_input = v
+                    elif self.input_focus == 'strength_req': self.strength_req_input = v
+                    elif self.input_focus == 'agility_req': self.agility_req_input = v
+                    elif self.input_focus == 'intelligence_req': self.intelligence_req_input = v
+                    elif self.input_focus == 'wisdom_req': self.wisdom_req_input = v
+                    elif self.input_focus == 'strength_def': self.strength_def_input = v
+                    elif self.input_focus == 'agility_def': self.agility_def_input = v
+                    elif self.input_focus == 'intelligence_def': self.intelligence_def_input = v
+                    elif self.input_focus == 'wisdom_def': self.wisdom_def_input = v
+                    elif self.input_focus == 'hit_points': self.hit_points_input = v
+                    elif self.input_focus == 'special_rules': self.special_rules_input = v
+                
                 current = get_val()
                 if event.key == pygame.K_BACKSPACE:
                     set_val(current[:-1])
@@ -246,12 +356,17 @@ class Game:
                     pass
                 else:
                     if event.unicode:
-                        if self.input_focus == 'name':
-                            if len(current) < 30:
+                        # Text fields: name, class, special_rules
+                        if self.input_focus in ['name', 'class', 'special_rules']:
+                            max_len = 30 if self.input_focus == 'name' else 100
+                            if len(current) < max_len:
                                 set_val(current + event.unicode)
+                        # Numeric fields
                         else:
-                            if event.unicode.isdigit() and len(current) < 3:
-                                set_val(current + event.unicode)
+                            if event.unicode.isdigit() or (event.unicode == '-' and len(current) == 0):
+                                max_len = 3
+                                if len(current) < max_len:
+                                    set_val(current + event.unicode)
     
     def update(self):
         """Update game state."""
@@ -320,70 +435,98 @@ class Game:
             "Draw", enabled=not self.table_deck.is_empty()
         )
         
-        # Render Card Creator panel box around the upper-right inputs
-        spacing = 40
+        # Render Card Creator panel
+        visible_fields = self._get_visible_fields()
         panel_x = self.card_name_input_x - 8
         panel_y = self.card_name_input_y - 8
         panel_w = self.card_name_input_width + 16
-        # Bottom = button top (y + 5*spacing) + button height (32) + bottom padding (12)
-        panel_h = (self.card_name_input_y + 5 * spacing + 32 + 12) - panel_y
+        # Bottom = submit button top + button height + padding
+        panel_h = (self.card_name_input_y + len(visible_fields) * self.spacing + 32 + 12) - panel_y
         self.renderer.render_panel_with_title(panel_x, panel_y, panel_w, panel_h, "Card Creator")
 
-        # Render the upper-right inputs (Card Name + Mana/Attack/Defense/Healing)
-        # Name
-        self.renderer.render_text_input(
-            self.card_name_input_x,
-            self.card_name_input_y,
-            self.card_name_input_width,
-            self.card_name_input_height,
-            "Card Name",
-            self.card_name_input,
-            self.input_focus == 'name'
-        )
-        # Mana
-        self.renderer.render_text_input(
-            self.card_name_input_x,
-            self.card_name_input_y + spacing,
-            self.card_name_input_width,
-            self.card_name_input_height,
-            "Mana",
-            self.mana_input,
-            self.input_focus == 'mana'
-        )
-        # Attack
-        self.renderer.render_text_input(
-            self.card_name_input_x,
-            self.card_name_input_y + 2 * spacing,
-            self.card_name_input_width,
-            self.card_name_input_height,
-            "Attack",
-            self.attack_input,
-            self.input_focus == 'attack'
-        )
-        # Defense
-        self.renderer.render_text_input(
-            self.card_name_input_x,
-            self.card_name_input_y + 3 * spacing,
-            self.card_name_input_width,
-            self.card_name_input_height,
-            "Defense",
-            self.defense_input,
-            self.input_focus == 'defense'
-        )
-        # Healing
-        self.renderer.render_text_input(
-            self.card_name_input_x,
-            self.card_name_input_y + 4 * spacing,
-            self.card_name_input_width,
-            self.card_name_input_height,
-            "Healing",
-            self.healing_input,
-            self.input_focus == 'healing'
-        )
-        # Submit button (no functionality yet)
+        # Render card type selector
+        type_selector_y = self._get_field_y_position('type_selector')
+        if type_selector_y is not None:
+            self.renderer.render_button(
+                self.card_name_input_x,
+                type_selector_y,
+                self.card_name_input_width,
+                32,
+                f"Type: {CARD_TYPES[self.card_type_index]}",
+                enabled=True
+            )
+        
+        # Render fields based on card type
+        field_labels = {
+            'name': 'Card Name',
+            'level': 'Level',
+            'class': 'Class',
+            'strength': 'Strength',
+            'agility': 'Agility',
+            'intelligence': 'Intelligence',
+            'wisdom': 'Wisdom',
+            'strength_mod': 'Strength Mod',
+            'agility_mod': 'Agility Mod',
+            'intelligence_mod': 'Intelligence Mod',
+            'wisdom_mod': 'Wisdom Mod',
+            'strength_req': 'Strength Req',
+            'agility_req': 'Agility Req',
+            'intelligence_req': 'Intelligence Req',
+            'wisdom_req': 'Wisdom Req',
+            'strength_def': 'Strength Def',
+            'agility_def': 'Agility Def',
+            'intelligence_def': 'Intelligence Def',
+            'wisdom_def': 'Wisdom Def',
+            'hit_points': 'Hit Points',
+            'special_rules': 'Special Rules',
+        }
+        
+        field_values = {
+            'name': self.card_name_input,
+            'level': self.level_input,
+            'class': self.class_input,
+            'strength': self.strength_input,
+            'agility': self.agility_input,
+            'intelligence': self.intelligence_input,
+            'wisdom': self.wisdom_input,
+            'strength_mod': self.strength_mod_input,
+            'agility_mod': self.agility_mod_input,
+            'intelligence_mod': self.intelligence_mod_input,
+            'wisdom_mod': self.wisdom_mod_input,
+            'strength_req': self.strength_req_input,
+            'agility_req': self.agility_req_input,
+            'intelligence_req': self.intelligence_req_input,
+            'wisdom_req': self.wisdom_req_input,
+            'strength_def': self.strength_def_input,
+            'agility_def': self.agility_def_input,
+            'intelligence_def': self.intelligence_def_input,
+            'wisdom_def': self.wisdom_def_input,
+            'hit_points': self.hit_points_input,
+            'special_rules': self.special_rules_input,
+        }
+        
+        for field_name in visible_fields:
+            if field_name == 'type_selector':
+                continue
+            field_y = self._get_field_y_position(field_name)
+            if field_y is not None:
+                label = field_labels.get(field_name, field_name)
+                value = field_values.get(field_name, "")
+                self.renderer.render_text_input(
+                    self.card_name_input_x,
+                    field_y,
+                    self.card_name_input_width,
+                    self.card_name_input_height,
+                    label,
+                    value,
+                    self.input_focus == field_name
+                )
+        
+        # Render Submit button
+        submit_y = self.card_name_input_y + len(visible_fields) * self.spacing
         self.renderer.render_button(
             self.card_name_input_x,
-            self.card_name_input_y + 5 * spacing,
+            submit_y,
             self.card_name_input_width,
             32,
             "Submit",
@@ -411,17 +554,56 @@ class Game:
                 return int(s)
             except Exception:
                 return 0
+        
         name = self.card_name_input.strip() or "Card"
-        mana = to_int(self.mana_input)
-        attack = to_int(self.attack_input)
-        defense = to_int(self.defense_input)
-        healing = to_int(self.healing_input)
+        card_type = CARD_TYPES[self.card_type_index]
         attrs = {}
-        if attack: attrs["attack"] = attack
-        if defense: attrs["defense"] = defense
-        if healing: attrs["healing"] = healing
-        if mana: attrs["mana"] = mana
-        new_card = Card(name, **attrs)
+        
+        # Collect attributes based on card type
+        if card_type == "Character":
+            attrs["level"] = to_int(self.level_input)
+            attrs["class"] = self.class_input.strip()
+            attrs["strength"] = to_int(self.strength_input)
+            attrs["agility"] = to_int(self.agility_input)
+            attrs["intelligence"] = to_int(self.intelligence_input)
+            attrs["wisdom"] = to_int(self.wisdom_input)
+            attrs["special_rules"] = self.special_rules_input.strip()
+        elif card_type == "Upgrade":
+            attrs["level"] = to_int(self.level_input)
+            attrs["strength_mod"] = to_int(self.strength_mod_input)
+            attrs["agility_mod"] = to_int(self.agility_mod_input)
+            attrs["intelligence_mod"] = to_int(self.intelligence_mod_input)
+            attrs["wisdom_mod"] = to_int(self.wisdom_mod_input)
+            attrs["special_rules"] = self.special_rules_input.strip()
+        elif card_type == "Plan":
+            attrs["strength_req"] = to_int(self.strength_req_input)
+            attrs["agility_req"] = to_int(self.agility_req_input)
+            attrs["intelligence_req"] = to_int(self.intelligence_req_input)
+            attrs["wisdom_req"] = to_int(self.wisdom_req_input)
+            attrs["special_rules"] = self.special_rules_input.strip()
+        elif card_type == "Skill":
+            attrs["strength_req"] = to_int(self.strength_req_input)
+            attrs["agility_req"] = to_int(self.agility_req_input)
+            attrs["intelligence_req"] = to_int(self.intelligence_req_input)
+            attrs["wisdom_req"] = to_int(self.wisdom_req_input)
+            attrs["special_rules"] = self.special_rules_input.strip()
+        elif card_type == "Location":
+            attrs["level"] = to_int(self.level_input)
+            attrs["strength_def"] = to_int(self.strength_def_input)
+            attrs["agility_def"] = to_int(self.agility_def_input)
+            attrs["intelligence_def"] = to_int(self.intelligence_def_input)
+            attrs["wisdom_def"] = to_int(self.wisdom_def_input)
+            attrs["hit_points"] = to_int(self.hit_points_input)
+            attrs["special_rules"] = self.special_rules_input.strip()
+        elif card_type == "Encounter":
+            attrs["strength_def"] = to_int(self.strength_def_input)
+            attrs["agility_def"] = to_int(self.agility_def_input)
+            attrs["intelligence_def"] = to_int(self.intelligence_def_input)
+            attrs["wisdom_def"] = to_int(self.wisdom_def_input)
+            attrs["hit_points"] = to_int(self.hit_points_input)
+            attrs["special_rules"] = self.special_rules_input.strip()
+        
+        new_card = Card(name, card_type=card_type, **attrs)
         # Place to the right of the deck at deck Y
         place_x = self.deck_x + self.deck_width + 20
         place_y = self.deck_y
