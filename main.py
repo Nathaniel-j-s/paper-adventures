@@ -66,35 +66,13 @@ class Game:
         self.running = True
         self.cards = []
         
-        # Create some test cards
-        self._create_test_cards()
-        
         # Add previously created cards (persisted) to the table
         for persisted_card in self.created_cards_deck.cards:
             # Ensure their rects are set and include in current table
             if not persisted_card.rect:
                 persisted_card.update_rect()
             self.cards.append(persisted_card)
-    
-    def _create_test_cards(self):
-        """Create sample cards for testing."""
-        # Create a test deck with some cards
-        card1 = Card("Fireball", attack=5, mana=3)
-        card1.set_position(200, 300)
-        self.cards.append(card1)
-        
-        card2 = Card("Shield", defense=3, mana=2)
-        card2.set_position(350, 300)
-        self.cards.append(card2)
-        
-        card3 = Card("Heal", healing=4, mana=1)
-        card3.set_position(500, 300)
-        self.cards.append(card3)
-        
-        card4 = Card("Lightning", attack=7, mana=4)
-        card4.set_position(200, 100)
-        self.cards.append(card4)
-    
+
     def handle_events(self):
         """Process all input events."""
         for event in pygame.event.get():
