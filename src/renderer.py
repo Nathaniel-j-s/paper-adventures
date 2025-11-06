@@ -66,21 +66,112 @@ class CardRenderer:
         
         # Draw card content if face up
         if card.face_up:
-            # Draw card name
-            text = self.font.render(card.name, True, card.text_color)
-            text_rect = text.get_rect(center=(card_x + card.width // 2, 
-                                             card_y + 20))
-            self.screen.blit(text, text_rect)
+            # Draw card name and type
+            name_text = self.font.render(card.name, True, card.text_color)
+            name_rect = name_text.get_rect(center=(card_x + card.width // 2, 
+                                                   card_y + 15))
+            self.screen.blit(name_text, name_rect)
             
-            # Draw attributes
-            y_offset = 50
-            for key, value in card.attributes.items():
-                attr_text = f"{key}: {value}"
-                text = self.font.render(attr_text, True, card.text_color)
-                text_rect = text.get_rect(center=(card_x + card.width // 2, 
-                                                 card_y + y_offset))
-                self.screen.blit(text, text_rect)
-                y_offset += 25
+            # Draw card type
+            type_text = self.font.render(f"({card.card_type})", True, card.text_color)
+            type_rect = type_text.get_rect(center=(card_x + card.width // 2, 
+                                                    card_y + 35))
+            self.screen.blit(type_text, type_rect)
+            
+            # Draw type-specific attributes
+            y_offset = 55
+            card_type = card.card_type
+            
+            if card_type == "Character":
+                if card.attributes.get("level", 0):
+                    self._render_attribute(card_x, card_y, card.width, y_offset, "Lvl", card.attributes.get("level", 0), card.text_color)
+                    y_offset += 20
+                if card.attributes.get("class"):
+                    self._render_attribute(card_x, card_y, card.width, y_offset, "Class", card.attributes.get("class"), card.text_color)
+                    y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "STR", card.attributes.get("strength", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "AGI", card.attributes.get("agility", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "INT", card.attributes.get("intelligence", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "WIS", card.attributes.get("wisdom", 0), card.text_color)
+                y_offset += 20
+            elif card_type == "Upgrade":
+                if card.attributes.get("level", 0):
+                    self._render_attribute(card_x, card_y, card.width, y_offset, "Lvl", card.attributes.get("level", 0), card.text_color)
+                    y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "STR+", card.attributes.get("strength_mod", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "AGI+", card.attributes.get("agility_mod", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "INT+", card.attributes.get("intelligence_mod", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "WIS+", card.attributes.get("wisdom_mod", 0), card.text_color)
+                y_offset += 20
+            elif card_type == "Plan":
+                self._render_attribute(card_x, card_y, card.width, y_offset, "STR Req", card.attributes.get("strength_req", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "AGI Req", card.attributes.get("agility_req", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "INT Req", card.attributes.get("intelligence_req", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "WIS Req", card.attributes.get("wisdom_req", 0), card.text_color)
+                y_offset += 20
+            elif card_type == "Skill":
+                self._render_attribute(card_x, card_y, card.width, y_offset, "STR Req", card.attributes.get("strength_req", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "AGI Req", card.attributes.get("agility_req", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "INT Req", card.attributes.get("intelligence_req", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "WIS Req", card.attributes.get("wisdom_req", 0), card.text_color)
+                y_offset += 20
+            elif card_type == "Location":
+                if card.attributes.get("level", 0):
+                    self._render_attribute(card_x, card_y, card.width, y_offset, "Lvl", card.attributes.get("level", 0), card.text_color)
+                    y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "STR Def", card.attributes.get("strength_def", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "AGI Def", card.attributes.get("agility_def", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "INT Def", card.attributes.get("intelligence_def", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "WIS Def", card.attributes.get("wisdom_def", 0), card.text_color)
+                y_offset += 20
+                if card.attributes.get("hit_points", 0):
+                    self._render_attribute(card_x, card_y, card.width, y_offset, "HP", card.attributes.get("hit_points", 0), card.text_color)
+                    y_offset += 20
+            elif card_type == "Encounter":
+                self._render_attribute(card_x, card_y, card.width, y_offset, "STR Def", card.attributes.get("strength_def", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "AGI Def", card.attributes.get("agility_def", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "INT Def", card.attributes.get("intelligence_def", 0), card.text_color)
+                y_offset += 20
+                self._render_attribute(card_x, card_y, card.width, y_offset, "WIS Def", card.attributes.get("wisdom_def", 0), card.text_color)
+                y_offset += 20
+                if card.attributes.get("hit_points", 0):
+                    self._render_attribute(card_x, card_y, card.width, y_offset, "HP", card.attributes.get("hit_points", 0), card.text_color)
+                    y_offset += 20
+            
+            # Draw special rules if present
+            special_rules = card.attributes.get("special_rules", "")
+            if special_rules:
+                # Truncate if too long for card
+                rules_text = special_rules[:20] + "..." if len(special_rules) > 20 else special_rules
+                rules_surface = self.font.render(rules_text, True, card.text_color)
+                rules_rect = rules_surface.get_rect(center=(card_x + card.width // 2, 
+                                                             card_y + card.height - 15))
+                self.screen.blit(rules_surface, rules_rect)
+    
+    def _render_attribute(self, card_x, card_y, card_width, y_offset, label, value, color):
+        """Render a single attribute line on a card."""
+        attr_text = f"{label}: {value}"
+        text = self.font.render(attr_text, True, color)
+        text_rect = text.get_rect(center=(card_x + card_width // 2, 
+                                         card_y + y_offset))
+        self.screen.blit(text, text_rect)
 
     def render_deck_pile(self, deck, x, y, width=100, height=140):
         """Render a deck pile at a fixed position with count label."""

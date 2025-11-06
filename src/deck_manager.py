@@ -38,6 +38,7 @@ class DeckManager:
         for card in deck.cards:
             card_data = {
                 "name": card.name,
+                "card_type": card.card_type,
                 "attributes": card.attributes,
                 "x": card.x,
                 "y": card.y,
@@ -76,7 +77,8 @@ class DeckManager:
         
         # Add cards
         for card_data in deck_data["cards"]:
-            card = Card(card_data["name"], **card_data["attributes"])
+            card_type = card_data.get("card_type", "Character")  # Default for backward compatibility
+            card = Card(card_data["name"], card_type=card_type, **card_data["attributes"])
             card.set_position(card_data["x"], card_data["y"])
             card.face_up = card_data.get("face_up", True)
             deck.add_card(card)
