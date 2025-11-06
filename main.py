@@ -62,6 +62,12 @@ class Game:
         self.hand_height = 170
         self.hand_cards = []
         
+        # In-play area in the center of the window
+        self.play_area_x = 10
+        self.play_area_y = 200
+        self.play_area_width = self.screen_width - 20
+        self.play_area_height = self.hand_y - self.play_area_y - 20
+        
         # Game state
         self.running = True
         self.cards = []
@@ -151,6 +157,21 @@ class Game:
                 for card in reversed(self.cards + self.hand_cards):  # Check from top to bottom
                     if card.is_point_inside(*event.pos):
                         self.input_handler.start_drag(card)
+                        break
+            
+            # Handle right-click on cards in hand to move to in-play area
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:  # Right mouse button
+                # Check if a card in hand was right-clicked
+                for card in reversed(self.hand_cards):  # Check from top to bottom
+                    if card.is_point_inside(*event.pos):
+                        # Remove from hand
+                        self.hand_cards.remove(card)
+                        # Position in center of play area
+                        center_x = self.play_area_x + self.play_area_width // 2 - card.width // 2
+                        center_y = self.play_area_y + self.play_area_height // 2 - card.height // 2
+                        card.set_position(center_x, center_y)
+                        # Add to in-play area (cards list)
+                        self.cards.append(card)
                         break
             
             # Handle flip on 'F' key while hovering a card
@@ -276,7 +297,11 @@ class Game:
         # Clear screen
         self.screen.fill((40, 40, 40))
         
-        # Render the hand area first (background)
+        # Render the in-play area first (background)
+        self.renderer.render_play_area(self.play_area_x, self.play_area_y, 
+                                       self.play_area_width, self.play_area_height)
+        
+        # Render the hand area (background)
         self.renderer.render_hand_area(self.hand_x, self.hand_y, self.hand_width, self.hand_height)
 
         # Render all cards

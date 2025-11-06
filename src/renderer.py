@@ -96,6 +96,13 @@ class CardRenderer:
         count_rect = count_text.get_rect(center=(x + width // 2, y + height + 14))
         self.screen.blit(count_text, count_rect)
 
+    def render_play_area(self, x, y, width, height):
+        """Render the in-play area background and label."""
+        pygame.draw.rect(self.screen, (30, 30, 30), (x, y, width, height))
+        pygame.draw.rect(self.screen, (120, 120, 120), (x, y, width, height), 2)
+        label = self.title_font.render("In-Play Area", True, (220, 220, 220))
+        self.screen.blit(label, (x + 8, y + 6))
+
     def render_hand_area(self, x, y, width, height):
         """Render the player's hand area background and label."""
         pygame.draw.rect(self.screen, (30, 30, 30), (x, y, width, height))

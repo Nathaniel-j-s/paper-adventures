@@ -7,8 +7,18 @@
         "attack": 1,
         "mana": 1
       },
-      "x": 133,
-      "y": 10,
+      "x": 535,
+      "y": 24,
+      "face_up": true
+    },
+    {
+      "name": "T2",
+      "attributes": {
+        "defense": 1,
+        "mana": 1
+      },
+      "x": 771,
+      "y": 35,
       "face_up": true
     }
   ]
